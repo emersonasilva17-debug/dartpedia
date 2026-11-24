@@ -1,6 +1,6 @@
 name: command_runner
-description: Pacote CLI completo do Dartpedia com suporte a enums aprimorados e extensoes ANSI.
-version: 0.0.3
+description: Pacote CLI robusto do Dartpedia com excecoes personalizadas e tratamento try/catch.
+version: 0.0.4
 
 environment:
   sdk: ^3.0.0

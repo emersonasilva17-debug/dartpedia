@@ -4,7 +4,7 @@ import 'package:dartpedia/logger.dart';
 import 'package:dartpedia/wikipedia.dart';
 import 'package:logging/logging.dart';
 
-const version = '0.0.7';
+const version = '0.0.8';
 
 class VersionCommand extends Command {
   final OutputCallback onOutput;
@@ -66,8 +66,10 @@ class SearchCommand extends Command {
       final inputFromStdin = stdin.readLineSync();
       if (inputFromStdin == null || inputFromStdin.isEmpty) {
         logger.warning('Busca cancelada: nenhum título informado via stdin.');
-        onOutput('Nenhum título informado. Encerrando.'.yellow);
-        return CommandStatus.invalidArguments;
+        throw const ArgumentException(
+          'Nenhum título de artigo foi informado.',
+          command: 'search',
+        );
       }
       articleTitle = inputFromStdin;
     } else {
@@ -87,8 +89,10 @@ class SearchCommand extends Command {
       return CommandStatus.success;
     } catch (e, stackTrace) {
       logger.severe('Falha ao buscar artigo "$articleTitle"', e, stackTrace);
-      onOutput('Erro na requisição: $e'.red);
-      return CommandStatus.failure;
+      throw CommandExecutionException(
+        'Não foi possível obter o artigo "$articleTitle".',
+        cause: e,
+      );
     }
   }
 }
