@@ -1,41 +1,45 @@
-import 'dart:collection';
-import 'dart:io';
-import 'arguments.dart';
+// Version: 0.0.0
+import 'dart:async';
+
+typedef CommandCallback = FutureOr<void> Function(List<String> arguments);
 
 class CommandRunner {
-  final Map<String, Command> _commands = <String, Command>{};
+  final Map<String, CommandCallback> _commands = {};
+  final Map<String, String> _descriptions = {};
 
-  UnmodifiableSetView<Command> get commands =>
-      UnmodifiableSetView<Command>(<Command>{..._commands.values});
+  void registerCommand(
+    String name,
+    CommandCallback callback, {
+    String description = '',
+  }) {
+    _commands[name] = callback;
+    _descriptions[name] = description;
+  }
 
-  Future<void> run(List<String> input) async {
-    final ArgResults results = parse(input);
-    if (results.command != null) {
-      Object? output = await results.command!.run(results);
-      print(output.toString());
+  Future<void> run(List<String> arguments) async {
+    if (arguments.isEmpty || arguments.first == 'help') {
+      printUsage();
+      return;
+    }
+
+    final commandName = arguments.first;
+    final commandArgs = arguments.length > 1 ? arguments.sublist(1) : <String>[];
+
+    final callback = _commands[commandName];
+    if (callback != null) {
+      await callback(commandArgs);
+    } else {
+      print('Comando desconhecido: "$commandName"\n');
+      printUsage();
     }
   }
 
-  void addCommand(Command command) {
-    // TODO: handle error (Commands can't have names that conflict)
-    _commands[command.name] = command;
-    command.runner = this;
-  }
-
-  ArgResults parse(List<String> input) {
-    var results = ArgResults();
-    results.command = _commands[input.first];
-    return results;
-  }
-
-  // Returns usage for the executable only.
-  // Should be overridden if you aren't using [HelpCommand]
-  // or another means of printing usage.
-
-  String get usage {
-    final exeFile = Platform.script.path.split('/').last;
-    return 'Usage: dart bin/$exeFile <command> [commandArg?] [...options?]';
+  void printUsage() {
+    print('Uso: dart run bin/dartpedia.dart <comando> [argumentos]');
+    print('Comandos disponíveis:');
+    print('  help               Exibe esta mensagem de ajuda');
+    _descriptions.forEach((name, desc) {
+      print('  ${name.padRight(18)} $desc');
+    });
   }
 }
-
-
