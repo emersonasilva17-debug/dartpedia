@@ -9,14 +9,18 @@ class Article {
     required this.extract,
   });
 
-  factory Article.fromJson(Map<String, dynamic> json) {
-    return Article(
-      title: json['title'] as String? ?? '',
-      extract: json['extract'] as String? ?? '',
-    );
+  factory Article.fromJson(Map<String, Object?> json) {
+    if (json
+        case {
+          'title': final String title,
+          'extract': final String extract,
+        }) {
+      return Article(title: title, extract: extract);
+    }
+    throw const FormatException('JSON inválido para o modelo Article.');
   }
 
-  Map<String, dynamic> toJson() => {
+  Map<String, Object?> toJson() => {
         'title': title,
         'extract': extract,
       };

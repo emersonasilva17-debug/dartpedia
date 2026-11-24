@@ -13,17 +13,38 @@ class Summary {
     this.description,
   });
 
-  factory Summary.fromJson(Map<String, dynamic> json) {
-    final titles = json['titles'] as Map<String, dynamic>?;
-    final parsedTitle = (titles != null && titles['normalized'] is String)
-        ? titles['normalized'] as String
-        : (json['title'] as String? ?? '');
-
-    return Summary(
-      title: parsedTitle,
-      pageId: json['pageid'] as int? ?? 0,
-      extract: json['extract'] as String? ?? '',
-      description: json['description'] as String?,
-    );
+  factory Summary.fromJson(Map<String, Object?> json) {
+    return switch (json) {
+      {
+        'titles': {'canonical': final String title},
+        'pageid': final int pageId,
+        'extract': final String extract,
+      } =>
+        Summary(
+          title: title,
+          pageId: pageId,
+          extract: extract,
+          description: json['description'] as String?,
+        ),
+      {
+        'title': final String title,
+        'pageid': final int pageId,
+        'extract': final String extract,
+      } =>
+        Summary(
+          title: title,
+          pageId: pageId,
+          extract: extract,
+          description: json['description'] as String?,
+        ),
+      _ => throw const FormatException('JSON inválido para o modelo Summary.'),
+    };
   }
+
+  Map<String, Object?> toJson() => {
+        'title': title,
+        'pageid': pageId,
+        'extract': extract,
+        if (description != null) 'description': description,
+      };
 }

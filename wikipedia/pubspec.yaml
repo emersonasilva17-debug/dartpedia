@@ -1,12 +1,9 @@
 name: wikipedia
-description: Pacote de modelos de dados e API da Wikipedia para o Dartpedia.
-version: 0.0.0
+description: Pacote de modelos de dados JSON e integracao com a API da Wikipedia.
+version: 0.0.1
 
 environment:
   sdk: ^3.0.0
 
 dependencies:
   http: ^1.2.0
-
-dev_dependencies:
-  test: ^1.25.0

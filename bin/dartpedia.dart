@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:command_runner/command_runner.dart';
 import 'package:dartpedia/logger.dart';
-import 'package:dartpedia/wikipedia.dart';
 import 'package:logging/logging.dart';
+import 'package:wikipedia/wikipedia.dart';
 
-const version = '0.0.8';
+const version = '0.0.9';
 
 class VersionCommand extends Command {
   final OutputCallback onOutput;
@@ -80,11 +80,16 @@ class SearchCommand extends Command {
     onOutput('Buscando "${articleTitle.bold}" na Wikipédia...\n'.cyan);
 
     try {
-      final summary = await getWikipediaArticle(articleTitle);
-      logger.info('Artigo "$articleTitle" obtido com sucesso (${summary.length} caracteres).');
+      final Summary summary = await fetchWikipediaSummary(articleTitle);
+      logger.info(
+        'Artigo "${summary.title}" (ID: ${summary.pageId}) desserializado com sucesso.',
+      );
       final outputBuffer = StringBuffer()
-        ..writeln('=== $articleTitle ==='.bold.green)
-        ..write(summary);
+        ..writeln('=== ${summary.title} (ID: ${summary.pageId}) ==='.bold.green);
+      if (summary.description != null) {
+        outputBuffer.writeln('Descrição: ${summary.description}'.yellow);
+      }
+      outputBuffer.write(summary.extract);
       onOutput(outputBuffer.toString());
       return CommandStatus.success;
     } catch (e, stackTrace) {

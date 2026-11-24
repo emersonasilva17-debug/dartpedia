@@ -1,31 +1,35 @@
 // Version: 0.0.0
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../model/summary.dart';
 
-Future<Summary> getWikipediaSummary(
-  String articleTitle, {
-  http.Client? client,
-}) async {
-  final httpClient = client ?? http.Client();
+Future<Summary> fetchWikipediaSummary(String articleTitle) async {
+  final encodedTitle = Uri.encodeComponent(articleTitle.trim());
   final url = Uri.https(
     'en.wikipedia.org',
-    '/api/rest_v1/page/summary/$articleTitle',
+    '/api/rest_v1/page/summary/$encodedTitle',
   );
 
-  final response = await httpClient.get(
+  final response = await http.get(
     url,
     headers: {
-      'User-Agent': 'DartpediaApp/1.0 (https://dart.dev; contato@exemplo.com)',
+      'User-Agent': 'DartpediaCLI/0.0.9 (Educational Dart Project)',
+      'Accept': 'application/json',
     },
   );
 
   if (response.statusCode == 200) {
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return Summary.fromJson(data);
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, Object?>) {
+      return Summary.fromJson(decoded);
+    }
+    throw const FormatException('Formato raiz do JSON inesperado.');
+  } else if (response.statusCode == 404) {
+    throw HttpException('Artigo "$articleTitle" não encontrado (HTTP 404).');
   } else {
-    throw Exception(
-      'Falha ao buscar o artigo "$articleTitle" (Status: ${response.statusCode})',
+    throw HttpException(
+      'Erro na API da Wikipédia: status ${response.statusCode}',
     );
   }
 }
