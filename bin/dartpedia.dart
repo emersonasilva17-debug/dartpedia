@@ -4,7 +4,7 @@ import 'package:dartpedia/logger.dart';
 import 'package:dartpedia/wikipedia.dart';
 import 'package:logging/logging.dart';
 
-const version = '0.0.6';
+const version = '0.0.7';
 
 class VersionCommand extends Command {
   final OutputCallback onOutput;
@@ -24,7 +24,7 @@ class VersionCommand extends Command {
   @override
   CommandStatus run(ArgResults results) {
     logger.info('Comando "version" executado. Versão atual: $version');
-    onOutput('Dartpedia CLI version $version');
+    onOutput('Dartpedia CLI version '.cyan + version.bold.green);
     return CommandStatus.success;
   }
 }
@@ -62,11 +62,11 @@ class SearchCommand extends Command {
     late String articleTitle;
 
     if (results.rest.isEmpty) {
-      stdout.write('Digite o título do artigo para buscar: ');
+      stdout.write('Digite o título do artigo para buscar: '.yellow);
       final inputFromStdin = stdin.readLineSync();
       if (inputFromStdin == null || inputFromStdin.isEmpty) {
         logger.warning('Busca cancelada: nenhum título informado via stdin.');
-        onOutput('Nenhum título informado. Encerrando.');
+        onOutput('Nenhum título informado. Encerrando.'.yellow);
         return CommandStatus.invalidArguments;
       }
       articleTitle = inputFromStdin;
@@ -75,19 +75,19 @@ class SearchCommand extends Command {
     }
 
     logger.info('Iniciando busca na Wikipédia pelo artigo: "$articleTitle"');
-    onOutput('Buscando "$articleTitle" na Wikipédia...\n');
+    onOutput('Buscando "${articleTitle.bold}" na Wikipédia...\n'.cyan);
 
     try {
       final summary = await getWikipediaArticle(articleTitle);
       logger.info('Artigo "$articleTitle" obtido com sucesso (${summary.length} caracteres).');
       final outputBuffer = StringBuffer()
-        ..writeln('=== $articleTitle ===')
+        ..writeln('=== $articleTitle ==='.bold.green)
         ..write(summary);
       onOutput(outputBuffer.toString());
       return CommandStatus.success;
     } catch (e, stackTrace) {
       logger.severe('Falha ao buscar artigo "$articleTitle"', e, stackTrace);
-      onOutput('Erro na requisição: $e');
+      onOutput('Erro na requisição: $e'.red);
       return CommandStatus.failure;
     }
   }
