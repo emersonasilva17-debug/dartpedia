@@ -1,4 +1,4 @@
-// Version: 0.0.1
+// Version: 0.0.2
 import 'dart:async';
 import 'arguments.dart';
 import 'command.dart';
@@ -6,9 +6,10 @@ import 'commands/help_command.dart';
 
 class CommandRunner {
   final Map<String, Command> _commands = {};
+  final OutputCallback onOutput;
 
-  CommandRunner() {
-    registerCommand(HelpCommand(_commands));
+  CommandRunner({OutputCallback? onOutput}) : onOutput = onOutput ?? print {
+    registerCommand(HelpCommand(_commands, onOutput: this.onOutput));
   }
 
   void registerCommand(Command command) {
@@ -25,7 +26,7 @@ class CommandRunner {
     final command = _commands[commandName];
 
     if (command == null) {
-      print('Comando desconhecido: "$commandName"\n');
+      onOutput('Comando desconhecido: "$commandName"\n');
       _commands['help']!.run(const ArgResults());
       return CommandStatus.invalidArguments;
     }

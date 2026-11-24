@@ -2,9 +2,13 @@ import 'dart:io';
 import 'package:command_runner/command_runner.dart';
 import 'package:dartpedia/wikipedia.dart';
 
-const version = '0.0.4';
+const version = '0.0.5';
 
 class VersionCommand extends Command {
+  final OutputCallback onOutput;
+
+  VersionCommand({OutputCallback? onOutput}) : onOutput = onOutput ?? print;
+
   @override
   String get name => 'version';
 
@@ -13,12 +17,16 @@ class VersionCommand extends Command {
 
   @override
   CommandStatus run(ArgResults results) {
-    print('Dartpedia CLI version $version');
+    onOutput('Dartpedia CLI version $version');
     return CommandStatus.success;
   }
 }
 
 class SearchCommand extends Command {
+  final OutputCallback onOutput;
+
+  SearchCommand({OutputCallback? onOutput}) : onOutput = onOutput ?? print;
+
   @override
   String get name => 'search';
 
@@ -29,6 +37,16 @@ class SearchCommand extends Command {
   String get usage => 'dart run bin/dartpedia.dart search <artigo>';
 
   @override
+  List<Argument> get options => const [
+        Argument(
+          name: 'lang',
+          abbr: 'l',
+          help: 'Idioma da Wikipédia (padrão: en)',
+          defaultValue: 'en',
+        ),
+      ];
+
+  @override
   Future<CommandStatus> run(ArgResults results) async {
     late String articleTitle;
 
@@ -36,7 +54,7 @@ class SearchCommand extends Command {
       stdout.write('Digite o título do artigo para buscar: ');
       final inputFromStdin = stdin.readLineSync();
       if (inputFromStdin == null || inputFromStdin.isEmpty) {
-        print('Nenhum título informado. Encerrando.');
+        onOutput('Nenhum título informado. Encerrando.');
         return CommandStatus.invalidArguments;
       }
       articleTitle = inputFromStdin;
@@ -44,23 +62,25 @@ class SearchCommand extends Command {
       articleTitle = results.rest.join('_');
     }
 
-    print('Buscando "$articleTitle" na Wikipédia...\n');
+    onOutput('Buscando "$articleTitle" na Wikipédia...\n');
     try {
       final summary = await getWikipediaArticle(articleTitle);
-      print('=== $articleTitle ===');
-      print(summary);
+      final outputBuffer = StringBuffer()
+        ..writeln('=== $articleTitle ===')
+        ..write(summary);
+      onOutput(outputBuffer.toString());
       return CommandStatus.success;
     } catch (e) {
-      print('Erro na requisição: $e');
+      onOutput('Erro na requisição: $e');
       return CommandStatus.failure;
     }
   }
 }
 
 void main(List<String> arguments) async {
-  final runner = CommandRunner()
-    ..registerCommand(VersionCommand())
-    ..registerCommand(SearchCommand());
+  final runner = CommandRunner(onOutput: print)
+    ..registerCommand(VersionCommand(onOutput: print))
+    ..registerCommand(SearchCommand(onOutput: print));
 
   await runner.run(arguments);
 }

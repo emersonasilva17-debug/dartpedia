@@ -1,4 +1,4 @@
-// Version: 0.0.0
+// Version: 0.0.1
 
 enum OptionType {
   flag,
@@ -16,13 +16,30 @@ class Argument {
   final String? abbr;
   final String help;
   final OptionType type;
+  final String? defaultValue;
 
   const Argument({
     required this.name,
     this.abbr,
     this.help = '',
     this.type = OptionType.option,
+    this.defaultValue,
   });
+
+  String get usage {
+    final buffer = StringBuffer();
+    if (abbr != null) {
+      buffer.write('-$abbr, ');
+    }
+    buffer.write('--$name');
+    if (help.isNotEmpty) {
+      buffer.write('\t$help');
+    }
+    if (defaultValue != null) {
+      buffer.write(' (padrão: $defaultValue)');
+    }
+    return buffer.toString();
+  }
 }
 
 class ArgResults {
