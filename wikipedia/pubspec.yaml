@@ -1,6 +1,6 @@
 name: wikipedia
-description: Pacote de modelos de dados JSON e integracao com a API da Wikipedia.
-version: 0.0.1
+description: Cliente de API HTTP da Wikipedia pronto para producao com URIs parametrizadas e modelos JSON.
+version: 0.0.2
 
 environment:
   sdk: ^3.0.0

@@ -4,7 +4,7 @@ import 'package:dartpedia/logger.dart';
 import 'package:logging/logging.dart';
 import 'package:wikipedia/wikipedia.dart';
 
-const version = '0.0.9';
+const version = '0.1.0';
 
 class VersionCommand extends Command {
   final OutputCallback onOutput;
@@ -42,62 +42,78 @@ class SearchCommand extends Command {
   String get name => 'search';
 
   @override
-  String get description => 'Busca o resumo de um artigo na Wikipédia.';
+  String get description => 'Busca artigos e resumos na Wikipédia via WikipediaApiClient.';
 
   @override
-  String get usage => 'dart run bin/dartpedia.dart search <artigo>';
+  String get usage => 'dart run bin/dartpedia.dart search <termo>';
 
   @override
   List<Argument> get options => const [
         Argument(
           name: 'lang',
           abbr: 'l',
-          help: 'Idioma da Wikipédia (padrão: en)',
+          help: 'Idioma da Wikipédia (ex: en, pt)',
           defaultValue: 'en',
         ),
       ];
 
   @override
   Future<CommandStatus> run(ArgResults results) async {
-    late String articleTitle;
+    late String query;
 
     if (results.rest.isEmpty) {
-      stdout.write('Digite o título do artigo para buscar: '.yellow);
+      stdout.write('Digite o termo para pesquisar na Wikipédia: '.yellow);
       final inputFromStdin = stdin.readLineSync();
       if (inputFromStdin == null || inputFromStdin.isEmpty) {
-        logger.warning('Busca cancelada: nenhum título informado via stdin.');
+        logger.warning('Pesquisa cancelada: nenhum termo informado.');
         throw const ArgumentException(
-          'Nenhum título de artigo foi informado.',
+          'Nenhum termo de pesquisa foi informado.',
           command: 'search',
         );
       }
-      articleTitle = inputFromStdin;
+      query = inputFromStdin;
     } else {
-      articleTitle = results.rest.join('_');
+      query = results.rest.join(' ');
     }
 
-    logger.info('Iniciando busca na Wikipédia pelo artigo: "$articleTitle"');
-    onOutput('Buscando "${articleTitle.bold}" na Wikipédia...\n'.cyan);
+    final client = WikipediaApiClient(language: 'en');
+    logger.info('Consultando WikipediaApiClient para: "$query"');
+    onOutput('Consultando API da Wikipédia para "${query.bold}"...\n'.cyan);
 
     try {
-      final Summary summary = await fetchWikipediaSummary(articleTitle);
-      logger.info(
-        'Artigo "${summary.title}" (ID: ${summary.pageId}) desserializado com sucesso.',
-      );
+      final searchResults = await client.searchArticles(query, limit: 3);
+      if (searchResults.results.isEmpty) {
+        onOutput('Nenhum artigo encontrado para "$query".'.yellow);
+        return CommandStatus.success;
+      }
+
+      final topTitle = searchResults.results.first.title;
+      final summary = await client.getArticleSummary(topTitle);
+
       final outputBuffer = StringBuffer()
         ..writeln('=== ${summary.title} (ID: ${summary.pageId}) ==='.bold.green);
       if (summary.description != null) {
         outputBuffer.writeln('Descrição: ${summary.description}'.yellow);
       }
-      outputBuffer.write(summary.extract);
+      outputBuffer
+        ..writeln(summary.extract)
+        ..writeln('\nArtigos relacionados encontrados:'.bold.cyan);
+
+      for (final item in searchResults.results) {
+        outputBuffer.writeln(' • ${item.title} (ID: ${item.pageId})');
+      }
+
       onOutput(outputBuffer.toString());
+      logger.info('Consulta finalizada com sucesso para "${summary.title}".');
       return CommandStatus.success;
     } catch (e, stackTrace) {
-      logger.severe('Falha ao buscar artigo "$articleTitle"', e, stackTrace);
+      logger.severe('Erro na consulta à API da Wikipédia', e, stackTrace);
       throw CommandExecutionException(
-        'Não foi possível obter o artigo "$articleTitle".',
+        'Não foi possível obter os dados da Wikipédia para "$query".',
         cause: e,
       );
+    } finally {
+      client.close();
     }
   }
 }
