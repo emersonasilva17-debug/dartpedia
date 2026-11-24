@@ -1,0 +1,6 @@
+name: copa_2026_cli
+description: Simulador CLI da Fase de Grupos da Copa do Mundo 2026.
+version: 1.0.0
+
+environment:
+  sdk: ^3.0.0
