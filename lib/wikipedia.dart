@@ -1,3 +1,4 @@
+// Version: 0.0.0
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -19,7 +20,7 @@ Future<String> getWikipediaArticle(String articleTitle) async {
     return data['extract'] as String? ?? 'Resumo não encontrado.';
   } else {
     throw Exception(
-      'Falha ao buscar o artigo "$articleTitle" (Status: ${response.statusCode})',
+      'Falha ao buscar artigo "$articleTitle" (Status: ${response.statusCode})',
     );
   }
 }

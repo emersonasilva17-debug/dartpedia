@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dartpedia/wikipedia.dart';
 
-const version = '0.0.1';
+const version = '0.0.2';
 
 void main(List<String> arguments) async {
   if (arguments.isEmpty || arguments.first == 'help') {
@@ -17,9 +17,10 @@ void main(List<String> arguments) async {
 }
 
 void printUsage() {
-  print('Comandos disponíveis:');
-  print('  help               Exibe esta ajuda');
-  print('  version            Exibe a versão do programa');
+  print('Uso: dart run bin/dartpedia.dart <comando> [argumentos]');
+  print('Comandos:');
+  print('  help               Mostra esta mensagem de ajuda');
+  print('  version            Mostra a versão atual ($version)');
   print('  search <artigo>    Busca o resumo de um artigo na Wikipédia');
 }
 
@@ -27,10 +28,10 @@ Future<void> searchWikipedia(List<String>? arguments) async {
   late String articleTitle;
 
   if (arguments == null || arguments.isEmpty) {
-    stdout.write('Por favor, digite o título do artigo: ');
+    stdout.write('Digite o título do artigo para buscar: ');
     final inputFromStdin = stdin.readLineSync();
     if (inputFromStdin == null || inputFromStdin.isEmpty) {
-      print('Nenhum título fornecido. Encerrando.');
+      print('Nenhum título informado. Encerrando.');
       return;
     }
     articleTitle = inputFromStdin;
@@ -41,9 +42,9 @@ Future<void> searchWikipedia(List<String>? arguments) async {
   print('Buscando "$articleTitle" na Wikipédia...\n');
   try {
     final summary = await getWikipediaArticle(articleTitle);
-    print('=== Resumo: $articleTitle ===');
+    print('=== $articleTitle ===');
     print(summary);
   } catch (e) {
-    print('Erro: $e');
+    print('Erro na requisição: $e');
   }
 }
