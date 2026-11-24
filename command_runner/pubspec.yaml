@@ -1,6 +1,6 @@
 name: command_runner
-description: Pacote reutilizavel para gerenciar comandos CLI do Dartpedia.
-version: 0.0.0
+description: Pacote orientado a objetos para gerenciamento de comandos CLI do Dartpedia.
+version: 0.0.1
 
 environment:
   sdk: ^3.0.0

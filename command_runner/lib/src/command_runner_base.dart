@@ -1,45 +1,35 @@
-// Version: 0.0.0
+// Version: 0.0.1
 import 'dart:async';
-
-typedef CommandCallback = FutureOr<void> Function(List<String> arguments);
+import 'arguments.dart';
+import 'command.dart';
+import 'commands/help_command.dart';
 
 class CommandRunner {
-  final Map<String, CommandCallback> _commands = {};
-  final Map<String, String> _descriptions = {};
+  final Map<String, Command> _commands = {};
 
-  void registerCommand(
-    String name,
-    CommandCallback callback, {
-    String description = '',
-  }) {
-    _commands[name] = callback;
-    _descriptions[name] = description;
+  CommandRunner() {
+    registerCommand(HelpCommand(_commands));
   }
 
-  Future<void> run(List<String> arguments) async {
-    if (arguments.isEmpty || arguments.first == 'help') {
-      printUsage();
-      return;
+  void registerCommand(Command command) {
+    _commands[command.name] = command;
+  }
+
+  Future<CommandStatus> run(List<String> rawArguments) async {
+    if (rawArguments.isEmpty) {
+      return _commands['help']!.run(const ArgResults());
     }
 
-    final commandName = arguments.first;
-    final commandArgs = arguments.length > 1 ? arguments.sublist(1) : <String>[];
+    final commandName = rawArguments.first;
+    final restArgs = rawArguments.length > 1 ? rawArguments.sublist(1) : <String>[];
+    final command = _commands[commandName];
 
-    final callback = _commands[commandName];
-    if (callback != null) {
-      await callback(commandArgs);
-    } else {
+    if (command == null) {
       print('Comando desconhecido: "$commandName"\n');
-      printUsage();
+      _commands['help']!.run(const ArgResults());
+      return CommandStatus.invalidArguments;
     }
-  }
 
-  void printUsage() {
-    print('Uso: dart run bin/dartpedia.dart <comando> [argumentos]');
-    print('Comandos disponíveis:');
-    print('  help               Exibe esta mensagem de ajuda');
-    _descriptions.forEach((name, desc) {
-      print('  ${name.padRight(18)} $desc');
-    });
+    return await command.run(ArgResults(rest: restArgs));
   }
 }
