@@ -1,13 +1,19 @@
 import 'dart:io';
 import 'package:command_runner/command_runner.dart';
+import 'package:dartpedia/logger.dart';
 import 'package:dartpedia/wikipedia.dart';
+import 'package:logging/logging.dart';
 
-const version = '0.0.5';
+const version = '0.0.6';
 
 class VersionCommand extends Command {
   final OutputCallback onOutput;
+  final Logger logger;
 
-  VersionCommand({OutputCallback? onOutput}) : onOutput = onOutput ?? print;
+  VersionCommand({
+    required this.logger,
+    OutputCallback? onOutput,
+  }) : onOutput = onOutput ?? print;
 
   @override
   String get name => 'version';
@@ -17,6 +23,7 @@ class VersionCommand extends Command {
 
   @override
   CommandStatus run(ArgResults results) {
+    logger.info('Comando "version" executado. Versão atual: $version');
     onOutput('Dartpedia CLI version $version');
     return CommandStatus.success;
   }
@@ -24,8 +31,12 @@ class VersionCommand extends Command {
 
 class SearchCommand extends Command {
   final OutputCallback onOutput;
+  final Logger logger;
 
-  SearchCommand({OutputCallback? onOutput}) : onOutput = onOutput ?? print;
+  SearchCommand({
+    required this.logger,
+    OutputCallback? onOutput,
+  }) : onOutput = onOutput ?? print;
 
   @override
   String get name => 'search';
@@ -54,6 +65,7 @@ class SearchCommand extends Command {
       stdout.write('Digite o título do artigo para buscar: ');
       final inputFromStdin = stdin.readLineSync();
       if (inputFromStdin == null || inputFromStdin.isEmpty) {
+        logger.warning('Busca cancelada: nenhum título informado via stdin.');
         onOutput('Nenhum título informado. Encerrando.');
         return CommandStatus.invalidArguments;
       }
@@ -62,15 +74,19 @@ class SearchCommand extends Command {
       articleTitle = results.rest.join('_');
     }
 
+    logger.info('Iniciando busca na Wikipédia pelo artigo: "$articleTitle"');
     onOutput('Buscando "$articleTitle" na Wikipédia...\n');
+
     try {
       final summary = await getWikipediaArticle(articleTitle);
+      logger.info('Artigo "$articleTitle" obtido com sucesso (${summary.length} caracteres).');
       final outputBuffer = StringBuffer()
         ..writeln('=== $articleTitle ===')
         ..write(summary);
       onOutput(outputBuffer.toString());
       return CommandStatus.success;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      logger.severe('Falha ao buscar artigo "$articleTitle"', e, stackTrace);
       onOutput('Erro na requisição: $e');
       return CommandStatus.failure;
     }
@@ -78,9 +94,13 @@ class SearchCommand extends Command {
 }
 
 void main(List<String> arguments) async {
-  final runner = CommandRunner(onOutput: print)
-    ..registerCommand(VersionCommand(onOutput: print))
-    ..registerCommand(SearchCommand(onOutput: print));
+  final logger = initFileLogger('DartpediaCLI');
+  logger.info('Aplicação iniciada com argumentos: $arguments');
 
-  await runner.run(arguments);
+  final runner = CommandRunner(onOutput: print)
+    ..registerCommand(VersionCommand(logger: logger, onOutput: print))
+    ..registerCommand(SearchCommand(logger: logger, onOutput: print));
+
+  final status = await runner.run(arguments);
+  logger.info('Execução finalizada com status: ${status.name}');
 }
